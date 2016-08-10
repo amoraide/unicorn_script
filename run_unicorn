@@ -4,54 +4,47 @@ FILE_DIR=$(dirname "$FILE_PATH")
 APP_PATH=$FILE_DIR/current
 PID_FILE=$FILE_DIR/shared/tmp/pids/unicorn.pid
 
-#echo $PID_FILE
+function init_unicorn {
+  cd $APP_PATH
+  bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
+}
+function start_unicorn {
+  if [ -f $PID_FILE ] ; then
+    read PID < $PID_FILE
+    if [ -d /proc/${PID} ] ; then
+      echo "Process already running"
+    else
+      rm $PID_FILE
+      init_unicorn
+    fi
+  else
+    init_unicorn
+  fi
+}
+function kill_unicorn {
+  if [ -f $PID_FILE ] ; then
+    read PID < $PID_FILE
+    if [ -d /proc/${PID} ] ; then
+      kill $PID
+      rm $PID_FILE
+    else
+      rm $PID_FILE
+    fi
+  fi
+}
+
 if [ $# -ne 1 ]; then
   echo "Invalid Parameters"
 else
   if [ "$1" == "off" ]; then
-    if [ -f $PID_FILE ] ; then
-      read PID < $PID_FILE
-      if [ -d /proc/${PID} ] ; then
-        kill $PID
-        rm $PID_FILE
-      else
-        rm $PID_FILE
-      fi
-    fi
+    kill_unicorn
   elif [ "$1" == "on" ]; then
-#    echo "on received"
-    if [ -f $PID_FILE ] ; then
-#      echo "pid exists"
-      read PID < $PID_FILE
-      if [ -d /proc/${PID} ] ; then
-        echo "Process currently running"
-      else
-#        echo "Process doesn't exist, turning on"
-        rm $PID_FILE
-        cd $APP_PATH
-        bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
-      fi
-    else
-#      echo "turning on"
-      cd $APP_PATH
-      bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
-    fi
+    start_unicorn
   elif [ "$1" == "restart" ]; then
-    if [ -f $PID_FILE ] ; then
-      read PID < $PID_FILE
-      if [ -d /proc/${PID} ] ; then
-        kill $PID
-        rm $PID_FILE
-        bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
-      else
-        rm $PID_FILE
-        cd $APP_PATH
-        bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
-      fi
-    else
-      cd $APP_PATH
-      bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
-    fi
+    kill_unicorn
+    start_unicorn
+  else
+    echo "Invalid parameters"
   fi
 fi
 
