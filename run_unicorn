@@ -3,10 +3,12 @@ FILE_PATH=$(readlink -f "$0")
 FILE_DIR=$(dirname "$FILE_PATH")
 APP_PATH=$FILE_DIR/current
 PID_FILE=$FILE_DIR/shared/tmp/pids/unicorn.pid
+UNICORN_CONFIG=$APP_PATH/config/unicorn.rb
+RAILS_ENV=production
 
 function init_unicorn {
   cd $APP_PATH
-  bundle exec unicorn -c $APP_PATH/config/unicorn.rb -E production -D
+  bundle exec unicorn -c $UNICORN_CONFIG -E $RAILS_ENV -D
 }
 function start_unicorn {
   if [ -f $PID_FILE ] ; then
